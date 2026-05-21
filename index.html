@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>شركة نايف للأغذية | نظام رواتب المطاعم</title>
+    <!-- مكتبة SheetJS لقراءة Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- مكتبات PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- أيقونة الموقع (favicon) -->
+    <link rel="icon" href="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg" type="image/jpeg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Tahoma', 'Calibri', 'Cairo', sans-serif;
+        }
+        body {
+            background: #f5f7fb;
+            padding: 0;
+            margin: 0;
+        }
+        /* الشريط العلوي الأحمر */
+        .red-header {
+            background: #c62828;
+            color: white;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-area img {
+            height: 50px;
+            width: auto;
+            border-radius: 12px;
+            background: white;
+            padding: 4px;
+        }
+        .company-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0px;
+        }
+        .month-selector {
+            background: white;
+            padding: 6px 14px;
+            border-radius: 40px;
+            color: #c62828;
+            font-weight: bold;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 20px 24px 32px;
+        }
+        .upload-area {
+            background: #f9fafc;
+            padding: 16px 20px;
+            border-radius: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 28px;
+            border: 1px solid #e2e8f0;
+        }
+        .btn {
+            border: none;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .btn-primary {
+            background: #c62828;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #8e1e1e;
+            transform: translateY(-1px);
+        }
+        .file-label {
+            background: #eef2ff;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        input[type="file"] { display: none; }
+        .search-section {
+            margin: 20px 0 24px;
+        }
+        .search-wrapper {
+            position: relative;
+        }
+        #restaurantSearch {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 60px;
+            font-size: 1rem;
+            background: white;
+            transition: 0.2s;
+        }
+        #restaurantSearch:focus {
+            border-color: #c62828;
+            box-shadow: 0 0 0 3px rgba(198,40,40,0.2);
+            outline: none;
+        }
+        .dynamic-dropdown {
+            position: absolute;
+            background: white;
+            width: 100%;
+            max-height: 240px;
+            overflow-y: auto;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 99;
+        }
+        .dropdown-item {
+            padding: 10px 18px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .dropdown-item:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid #edf2f7;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            min-width: 1200px;
+        }
+        th {
+            background: #f8fafc;
+            padding: 12px 8px;
+            border-bottom: 2px solid #e2e8f0;
+            color: #0f3b2c;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eef2f8;
+            white-space: nowrap;
+        }
+        .total-row {
+            background: #fff1f0;
+            font-weight: 800;
+            border-top: 2px solid #cbd5e1;
+        }
+        .total-row td {
+            background: #fff1f0;
+            font-weight: 800;
+        }
+        .rest-badge {
+            background: #eef2ff;
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 8px 0;
+        }
+        .pdf-export-btn {
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .pdf-export-btn:hover {
+            background: #9a2a2a;
+            transform: scale(1.02);
+        }
+        .no-data {
+            text-align: center;
+            padding: 56px;
+            color: #5b6e8c;
+        }
+        /* توقيع المطور - مصغر، إطار أحمر، بدون خلفية ملونة */
+        .signature-card {
+            position: fixed;
+            bottom: 18px;
+            left: 18px;
+            background: white;
+            color: #1e1e2f;
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 2px solid #c62828;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-family: monospace, 'Segoe UI';
+            font-size: 0.6rem;
+            font-weight: 600;
+            z-index: 1000;
+            transition: 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            flex-direction: column;
+            line-height: 1.3;
+            backdrop-filter: none;
+        }
+        .signature-card .name {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #b91c1c;
+        }
+        .signature-card .title {
+            font-size: 0.55rem;
+            opacity: 0.8;
+            color: #2c3e50;
+        }
+        .signature-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+        @media print {
+            .signature-card { display: none; }
+            .pdf-export-btn { display: none; }
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6c7a91;
+        }
+    </style>
+</head>
+<body>
+
+<!-- الشريط العلوي الأحمر (شعار + اسم الشركة) -->
+<div class="red-header">
+    <div class="logo-area">
+        <img src="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg" alt="شعار نايف" onerror="this.src='https://via.placeholder.com/50?text=NAIF'">
+        <span class="company-name">شركة نايف للأغذية</span>
+    </div>
+    <div style="display: flex; gap: 16px; align-items: center;">
+        <label style="font-weight: 500;">📅 الشهر:</label>
+        <select id="monthSelect" class="month-selector"></select>
+    </div>
+</div>
+
+<div class="container">
+    <div class="upload-area">
+        <label class="file-label">
+            📂 رفع ملف Excel (رواتب)
+            <input type="file" id="excelUpload" accept=".xlsx, .xls">
+        </label>
+        <span style="font-size:0.7rem;">يدعم ملفات Excel (.xlsx, .xls) - يتم عرض بيانات أول شيت فقط</span>
+    </div>
+
+    <div class="search-section">
+        <div class="search-wrapper">
+            <input type="text" id="restaurantSearch" placeholder="🔍 ابحث عن مطعم بالحروف (اتركه فارغاً لعرض إجمالي جميع المطاعم)">
+            <div id="dynamicDropdown" class="dynamic-dropdown"></div>
+        </div>
+    </div>
+
+    <div id="restaurantHeader"></div>
+
+    <div style="display: flex; justify-content: flex-start;">
+        <button id="exportPdfBtn" class="pdf-export-btn">📄 تصدير التقرير إلى PDF (أفقي)</button>
+    </div>
+
+    <!-- الجدول الكامل -->
+    <div id="tableContainer" class="table-wrapper"></div>
+    <footer>جميع الأرقام بالدينار الكويتي | قيمة 0 تظهر كـ "-" | النظام المالي لرواتب المطاعم</footer>
+</div>
+
+<!-- توقيع المطور -->
+<a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
+    <div class="name">Yasser Elkhateeb</div>
+    <div class="title">مطور البرنامج 67011143</div>
+</a>
+
+<script>
+    // ---------- المتغيرات العامة ----------
+    let rawData = [];            // جميع الموظفين (كائنات) بالترتيب الأصلي للملف
+    let uniqueRestaurants = [];
+    let currentSelectionMode = "all"; // "all" or "single"
+    let currentRestaurant = "";
+
+    // أسماء الأعمدة المطلوبة (نفس الترتيب الأصلي)
+    const COLUMN_ORDER = [
+        "مركز التكلفة", "صافي الراتب المستحق", "ذمم", "جزاءات", "اجمالي الاضافي",
+        "فروق رواتب", "الاضافي", "البدلات", "الراتب المستحق", "ايام العمل خلال الشهر",
+        "الراتب الاساسي", "الوظيفة", "الاسم"
+    ];
+
+    // خريطة تحويل أسماء الشهور إلى العربية
+    const monthNamesAr = {
+        "January": "يناير", "February": "فبراير", "March": "مارس", "April": "أبريل",
+        "May": "مايو", "June": "يونيو", "July": "يوليو", "August": "أغسطس",
+        "September": "سبتمبر", "October": "أكتوبر", "November": "نوفمبر", "December": "ديسمبر"
+    };
+    const monthListEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    // دالة مساعدة لعرض القيمة: إذا كانت 0 أو 0.0 تعرض "-" وإلا عرض الرقم مع 3 منازل للأرقام
+    function formatValue(value, isNumericField = true) {
+        if (!isNumericField) return value || "—";
+        let num = parseFloat(value);
+        if (isNaN(num)) return "0.000";
+        if (num === 0) return "-";
+        return num.toFixed(3);
+    }
+
+    // قراءة وتحليل Excel - نأخذ أول شيت فقط
+    function parseExcelData(arrayBuffer) {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        if (!rows || rows.length < 2) throw new Error("الملف فارغ");
+
+        let headerRowIndex = -1;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (row && row.some(cell => String(cell || "").trim() === "مركز التكلفة")) {
+                headerRowIndex = i;
+                break;
+            }
+        }
+        if (headerRowIndex === -1) throw new Error("لم نعثر على عمود 'مركز التكلفة'");
+
+        const headerRow = rows[headerRowIndex];
+        const colIdx = {};
+        COLUMN_ORDER.forEach(col => {
+            const idx = headerRow.findIndex(cell => String(cell || "").trim() === col);
+            colIdx[col] = idx !== -1 ? idx : -1;
+        });
+        if (colIdx["مركز التكلفة"] === -1) throw new Error("العمود الأساسي مفقود");
+
+        const employees = [];
+        for (let i = headerRowIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+            const costCenterRaw = row[colIdx["مركز التكلفة"]] ? String(row[colIdx["مركز التكلفة"]]).trim() : "";
+            if (costCenterRaw === "") continue;
+
+            const empRecord = {};
+            for (let col of COLUMN_ORDER) {
+                let rawVal = (colIdx[col] !== -1 && row[colIdx[col]] !== undefined) ? row[colIdx[col]] : "";
+                if (col !== "مركز التكلفة" && col !== "الوظيفة" && col !== "الاسم") {
+                    let num = parseFloat(String(rawVal).replace(/,/g, ''));
+                    empRecord[col] = isNaN(num) ? 0 : num;
+                } else {
+                    empRecord[col] = String(rawVal).trim();
+                }
+            }
+            employees.push(empRecord);
+        }
+        if (employees.length === 0) throw new Error("لا توجد سجلات صالحة");
+        return employees;
+    }
+
+    // تحديث قائمة المطاعم
+    function updateUniqueRestaurants() {
+        const set = new Set();
+        rawData.forEach(emp => {
+            if (emp["مركز التكلفة"]) set.add(emp["مركز التكلفة"]);
+        });
+        uniqueRestaurants = Array.from(set).sort();
+        renderDropdown([]);
+        refreshDisplayBySearch();
+    }
+
+    function renderDropdown(items) {
+        const dropdown = document.getElementById("dynamicDropdown");
+        if (!items.length) {
+            dropdown.style.display = "none";
+            dropdown.innerHTML = "";
+            return;
+        }
+        dropdown.innerHTML = items.map(item => `<div class="dropdown-item">${escapeHtml(item)}</div>`).join('');
+        dropdown.style.display = "block";
+        document.querySelectorAll('.dropdown-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const name = e.target.innerText;
+                document.getElementById("restaurantSearch").value = name;
+                dropdown.style.display = "none";
+                if (uniqueRestaurants.includes(name)) {
+                    currentSelectionMode = "single";
+                    currentRestaurant = name;
+                    renderFullTableForRestaurant(name);
+                }
+            });
+        });
+    }
+
+    function filterDropdown(searchText) {
+        if (!searchText) { renderDropdown([]); return; }
+        const filtered = uniqueRestaurants.filter(r => r.toLowerCase().includes(searchText.toLowerCase()));
+        renderDropdown(filtered);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // حساب المجاميع لمجموعة من الموظفين
+    function computeTotals(employees) {
+        const sums = {
+            "صافي الراتب المستحق": 0, "ذمم": 0, "جزاءات": 0, "اجمالي الاضافي": 0,
+            "فروق رواتب": 0, "الاضافي": 0, "البدلات": 0, "الراتب المستحق": 0,
+            "ايام العمل خلال الشهر": 0, "الراتب الاساسي": 0
+        };
+        employees.forEach(emp => {
+            sums["صافي الراتب المستحق"] += emp["صافي الراتب المستحق"] || 0;
+            sums["ذمم"] += emp["ذمم"] || 0;
+            sums["جزاءات"] += emp["جزاءات"] || 0;
+            sums["اجمالي الاضافي"] += emp["اجمالي الاضافي"] || 0;
+            sums["فروق رواتب"] += emp["فروق رواتب"] || 0;
+            sums["الاضافي"] += emp["الاضافي"] || 0;
+            sums["البدلات"] += emp["البدلات"] || 0;
+            sums["الراتب المستحق"] += emp["الراتب المستحق"] || 0;
+            sums["ايام العمل خلال الشهر"] += emp["ايام العمل خلال الشهر"] || 0;
+            sums["الراتب الاساسي"] += emp["الراتب الاساسي"] || 0;
+        });
+        return sums;
+    }
+
+    // عرض الجدول لمطعم محدد - مع عكس ترتيب الصفوف
+    function renderFullTableForRestaurant(restaurantName) {
+        let employees = rawData.filter(emp => emp["مركز التكلفة"] === restaurantName);
+        if (!employees.length) {
+            document.getElementById("tableContainer").innerHTML = `<div class="no-data">⚠️ لا يوجد موظفين لهذا المطعم</div>`;
+            document.getElementById("restaurantHeader").innerHTML = `<div class="rest-badge">🏨 المطعم: ${escapeHtml(restaurantName)} (لا بيانات)</div>`;
+            return;
+        }
+        // عكس ترتيب الموظفين (من الأحدث إلى الأقدم بناءً على ترتيب الملف)
+        employees = [...employees].reverse();
+        const sums = computeTotals(employees);
+        let html = `<table><thead><tr>`;
+        COLUMN_ORDER.forEach(col => { html += `<th>${col}</th>`; });
+        html += `</tr></thead><tbody>`;
+        employees.forEach(emp => {
+            html += `<tr>`;
+            COLUMN_ORDER.forEach(col => {
+                let val = emp[col];
+                let isNumeric = (col !== "مركز التكلفة" && col !== "الوظيفة" && col !== "الاسم");
+                let displayVal = "";
+                if (isNumeric) {
+                    displayVal = formatValue(val, true);
+                } else {
+                    displayVal = val || "—";
+                }
+                html += `<td>${escapeHtml(String(displayVal))}</td>`;
+            });
+            html += `</tr>`;
+        });
+        // صف الإجمالي
+        html += `<tr class="total-row">`;
+        COLUMN_ORDER.forEach(col => {
+            if (col === "مركز التكلفة") html += `<td style="font-weight:bold;">الإجمالي</td>`;
+            else if (col === "الوظيفة" || col === "الاسم") html += `<td></td>`;
+            else {
+                let totalVal = sums[col] !== undefined ? sums[col] : 0;
+                let displayTotal = (totalVal === 0) ? "-" : totalVal.toFixed(3);
+                html += `<td style="font-weight:bold;">${displayTotal}</td>`;
+            }
+        });
+        html += `</tr></tbody></table>`;
+        document.getElementById("tableContainer").innerHTML = html;
+        document.getElementById("restaurantHeader").innerHTML = `<div class="rest-badge">🏨 المطعم: ${escapeHtml(restaurantName)} &nbsp; | 👥 عدد الموظفين: ${employees.length}</div>`;
+        currentSelectionMode = "single";
+        currentRestaurant = restaurantName;
+    }
+
+    // عرض إجمالي كل المطاعم (جميع الموظفين) مع عكس الترتيب
+    function renderAllRestaurantsTotal() {
+        if (!rawData.length) {
+            document.getElementById("tableContainer").innerHTML = `<div class="no-data">📁 قم برفع ملف Excel لعرض البيانات</div>`;
+            document.getElementById("restaurantHeader").innerHTML = "";
+            return;
+        }
+        let allEmployees = [...rawData];
+        // عكس ترتيب الصفوف (بحيث يظهر آخر موظف في الملف أولاً)
+        allEmployees.reverse();
+        const sums = computeTotals(allEmployees);
+        let html = `<table><thead><tr>`;
+        COLUMN_ORDER.forEach(col => { html += `<th>${col}</th>`; });
+        html += `</tr></thead><tbody>`;
+        allEmployees.forEach(emp => {
+            html += `<tr>`;
+            COLUMN_ORDER.forEach(col => {
+                let val = emp[col];
+                let isNumeric = (col !== "مركز التكلفة" && col !== "الوظيفة" && col !== "الاسم");
+                let displayVal = "";
+                if (isNumeric) {
+                    displayVal = formatValue(val, true);
+                } else {
+                    displayVal = val || "—";
+                }
+                html += `<td>${escapeHtml(String(displayVal))}</td>`;
+            });
+            html += `</tr>`;
+        });
+        // صف الإجمالي العام
+        html += `<tr class="total-row">`;
+        COLUMN_ORDER.forEach(col => {
+            if (col === "مركز التكلفة") html += `<td style="font-weight:bold;">الإجمالي العام</td>`;
+            else if (col === "الوظيفة" || col === "الاسم") html += `<td></td>`;
+            else {
+                let totalVal = sums[col] !== undefined ? sums[col] : 0;
+                let displayTotal = (totalVal === 0) ? "-" : totalVal.toFixed(3);
+                html += `<td style="font-weight:bold;">${displayTotal}</td>`;
+            }
+        });
+        html += `</tr></tbody></table>`;
+        document.getElementById("tableContainer").innerHTML = html;
+        document.getElementById("restaurantHeader").innerHTML = `<div class="rest-badge">📊 إجمالي جميع المطاعم &nbsp; | 👥 إجمالي الموظفين: ${allEmployees.length}</div>`;
+        currentSelectionMode = "all";
+        currentRestaurant = "";
+    }
+
+    // بناءً على حقل البحث، إما عرض الكل أو مطعم معين
+    function refreshDisplayBySearch() {
+        const searchVal = document.getElementById("restaurantSearch").value.trim();
+        if (searchVal === "") {
+            renderAllRestaurantsTotal();
+        } else {
+            const exactMatch = uniqueRestaurants.find(r => r === searchVal);
+            if (exactMatch) {
+                renderFullTableForRestaurant(exactMatch);
+            } else {
+                renderAllRestaurantsTotal();
+                document.getElementById("restaurantHeader").innerHTML = `<div class="rest-badge">⚠️ لم يتم العثور على مطعم "${escapeHtml(searchVal)}" - عرض إجمالي جميع المطاعم</div>`;
+            }
+        }
+    }
+
+    // تحميل البيانات من الملف
+    function loadDataFromBuffer(buffer, msg) {
+        try {
+            const employees = parseExcelData(buffer);
+            rawData = employees;
+            updateUniqueRestaurants();
+            document.getElementById("restaurantSearch").value = "";
+            renderAllRestaurantsTotal();
+            console.log(msg);
+        } catch (err) {
+            alert("خطأ في التحليل: " + err.message);
+            rawData = [];
+            updateUniqueRestaurants();
+            document.getElementById("tableContainer").innerHTML = `<div class="no-data">خطأ في الملف: ${err.message}</div>`;
+        }
+    }
+
+    function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => loadDataFromBuffer(e.target.result, `تم تحميل ${file.name}`);
+        reader.readAsArrayBuffer(file);
+    }
+
+    // ---------- تصدير PDF أفقي مع عكس الترتيب ----------
+    async function exportToPDF() {
+        if (!rawData.length) {
+            alert("لا توجد بيانات لتصديرها. يرجى رفع ملف أولاً.");
+            return;
+        }
+        const monthEn = document.getElementById("monthSelect").value;
+        const monthAr = monthNamesAr[monthEn] || monthEn;
+        const reportTitle = `رواتب شهر ${monthAr}`;
+        
+        let exportEmployees = [];
+        let titleSub = "";
+        if (currentSelectionMode === "single" && currentRestaurant && currentRestaurant !== "") {
+            exportEmployees = rawData.filter(emp => emp["مركز التكلفة"] === currentRestaurant);
+            titleSub = ` - ${currentRestaurant}`;
+        } else {
+            exportEmployees = [...rawData];
+            titleSub = " - جميع المطاعم";
+        }
+        if (exportEmployees.length === 0) {
+            alert("لا توجد بيانات للمعيار المحدد");
+            return;
+        }
+        // عكس الترتيب أيضاً في PDF
+        exportEmployees.reverse();
+        const sums = computeTotals(exportEmployees);
+        
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '-9999px';
+        container.style.width = '1200px';
+        container.style.background = '#ffffff';
+        container.style.direction = 'rtl';
+        container.style.fontFamily = "'Segoe UI', 'Tahoma', sans-serif";
+        container.style.padding = '20px';
+        document.body.appendChild(container);
+        
+        const logoUrl = "https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg";
+        const headerDiv = document.createElement('div');
+        headerDiv.style.background = '#c62828';
+        headerDiv.style.color = 'white';
+        headerDiv.style.padding = '12px 20px';
+        headerDiv.style.display = 'flex';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.flexWrap = 'wrap';
+        headerDiv.style.borderRadius = '12px';
+        headerDiv.style.marginBottom = '20px';
+        headerDiv.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${logoUrl}" style="height:50px; width:auto; background:white; border-radius:8px; padding:4px;" onerror="this.style.display='none'">
+                <span style="font-weight:800; font-size:1.4rem;">شركة نايف للأغذية</span>
+            </div>
+            <div style="text-align:left;">
+                <div style="font-size:1rem; font-weight:bold;">${reportTitle}${titleSub}</div>
+                <div style="font-size:0.75rem;">تاريخ: ${new Date().toLocaleDateString('ar-EG')}</div>
+            </div>
+        `;
+        container.appendChild(headerDiv);
+        
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.fontSize = '0.7rem';
+        table.style.border = '1px solid #ccc';
+        let theadHtml = `<thead><tr style="background:#f1f5f9;">`;
+        COLUMN_ORDER.forEach(col => {
+            theadHtml += `<th style="padding:8px; border:1px solid #ccc; white-space:nowrap;">${col}</th>`;
+        });
+        theadHtml += `</tr></thead><tbody>`;
+        let tbodyHtml = "";
+        exportEmployees.forEach(emp => {
+            tbodyHtml += `<tr>`;
+            COLUMN_ORDER.forEach(col => {
+                let val = emp[col];
+                let isNumeric = (col !== "مركز التكلفة" && col !== "الوظيفة" && col !== "الاسم");
+                let display = "";
+                if (isNumeric) {
+                    let num = parseFloat(val);
+                    if (isNaN(num)) display = "0.000";
+                    else if (num === 0) display = "-";
+                    else display = num.toFixed(3);
+                } else {
+                    display = val || "—";
+                }
+                tbodyHtml += `<td style="padding:6px; border:1px solid #e2e8f0; white-space:nowrap;">${escapeHtml(String(display))}</td>`;
+            });
+            tbodyHtml += `</tr>`;
+        });
+        tbodyHtml += `<tr style="background:#fff0f0; font-weight:bold;">`;
+        COLUMN_ORDER.forEach(col => {
+            if (col === "مركز التكلفة") tbodyHtml += `<td style="border:1px solid #ccc;">الإجمالي</td>`;
+            else if (col === "الوظيفة" || col === "الاسم") tbodyHtml += `<td style="border:1px solid #ccc;"></td>`;
+            else {
+                let totalVal = sums[col] !== undefined ? sums[col] : 0;
+                let displayTotal = (totalVal === 0) ? "-" : totalVal.toFixed(3);
+                tbodyHtml += `<td style="border:1px solid #ccc;">${displayTotal}</td>`;
+            }
+        });
+        tbodyHtml += `</tr>`;
+        table.innerHTML = theadHtml + tbodyHtml + `</tbody>`;
+        container.appendChild(table);
+        
+        const footerDiv = document.createElement('div');
+        footerDiv.style.fontSize = '0.65rem';
+        footerDiv.style.textAlign = 'center';
+        footerDiv.style.marginTop = '16px';
+        footerDiv.style.color = '#4b5563';
+        footerDiv.innerText = `تقرير رواتب - جميع الأرقام بالدينار الكويتي (القيمة صفر تظهر كـ "-")`;
+        container.appendChild(footerDiv);
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'pt', 'a4');
+        const imgWidth = pdf.internal.pageSize.getWidth();
+        try {
+            const canvas = await html2canvas(container, { scale: 2.5, useCORS: true, logging: false });
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`${reportTitle.replace(/ /g, '_')}${titleSub.replace(/ /g, '_')}.pdf`);
+        } catch (error) {
+            console.error("PDF error:", error);
+            alert("حدث خطأ أثناء إنشاء PDF");
+        } finally {
+            document.body.removeChild(container);
+        }
+    }
+
+    // تعبئة قائمة الشهور بالأسماء العربية، مع تحديد الشهر السابق تلقائياً
+    function populateMonths() {
+        const monthSelect = document.getElementById("monthSelect");
+        // تحديد الشهر الحالي
+        const now = new Date();
+        let currentMonthIndex = now.getMonth(); // 0-11
+        let currentYear = now.getFullYear();
+        let prevMonthIndex = currentMonthIndex - 1;
+        if (prevMonthIndex < 0) {
+            prevMonthIndex = 11;
+        }
+        // إضافة الخيارات بالعربية
+        monthListEn.forEach((monthEn, idx) => {
+            const option = document.createElement("option");
+            option.value = monthEn;
+            option.textContent = monthNamesAr[monthEn];
+            if (idx === prevMonthIndex) {
+                option.selected = true;
+            }
+            monthSelect.appendChild(option);
+        });
+    }
+
+    // ربط الأحداث
+    document.getElementById("excelUpload").addEventListener("change", (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+    document.getElementById("exportPdfBtn").addEventListener("click", exportToPDF);
+    const searchInput = document.getElementById("restaurantSearch");
+    searchInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        if (val === "") {
+            renderDropdown([]);
+            refreshDisplayBySearch();
+        } else {
+            filterDropdown(val);
+        }
+    });
+    searchInput.addEventListener("blur", () => {
+        setTimeout(() => {
+            if (document.getElementById("restaurantSearch").value.trim() === "") {
+                renderAllRestaurantsTotal();
+            }
+            document.getElementById("dynamicDropdown").style.display = "none";
+        }, 200);
+    });
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".search-wrapper")) {
+            document.getElementById("dynamicDropdown").style.display = "none";
+        }
+    });
+    
+    // تهيئة الشهور وعرض ترحيبي
+    populateMonths();
+    renderAllRestaurantsTotal();
+</script>
+</body>
+</html>
